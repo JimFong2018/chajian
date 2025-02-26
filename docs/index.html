@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>志愿推荐插件</title>
-    <script src="https://sf1-scmcdn-tos.pstatp.com/goofy/lark/op/h5-js-sdk/index.js"></script>
+    <script src="https://lf1-cdn-tos.bytegoofy.com/obj/mosaic-legacy/base-sdk/base-sdk.js"></script>
     <style>
         body {
             margin: 0;
@@ -101,10 +101,21 @@
                     await new Promise(resolve => window.addEventListener('load', resolve));
                 }
 
-                // 确保 bitable 对象存在
-                if (!window.bitable) {
-                    throw new Error('飞书 SDK 未能正确加载，请刷新页面重试');
-                }
+                // 等待 Base SDK 加载完成
+                await new Promise((resolve, reject) => {
+                    if (window.BaseSdk) {
+                        resolve();
+                    } else {
+                        const script = document.createElement('script');
+                        script.src = 'https://lf1-cdn-tos.bytegoofy.com/obj/mosaic-legacy/base-sdk/base-sdk.js';
+                        script.onload = resolve;
+                        script.onerror = () => reject(new Error('SDK加载失败'));
+                        document.head.appendChild(script);
+                    }
+                });
+
+                // 初始化 Base SDK
+                const bitable = await window.BaseSdk.init();
 
                 showStatus('正在连接到飞书多维表格...');
                 const table = await bitable.base.getActiveTable();
