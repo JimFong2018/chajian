@@ -16,17 +16,25 @@
     </div>
 
     <style>
+        body {
+            margin: 0;
+            padding: 16px;
+            font-family: -apple-system,BlinkMacSystemFont,Helvetica Neue,Tahoma,PingFang SC,Microsoft Yahei,Arial,Hiragino Sans GB,sans-serif;
+        }
         .volunteer-plugin {
             padding: 20px;
-            font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            border-radius: 8px;
+            background: var(--semi-color-bg-0, #fff);
         }
         h1 {
             color: #2196F3;
             margin-bottom: 30px;
+            font-size: 18px;
         }
         .timeline {
             position: relative;
             padding-left: 30px;
+            min-height: 100px;
         }
         .timeline::before {
             content: '';
@@ -58,43 +66,47 @@
             margin-bottom: 5px;
         }
         .timeline-content {
-            background-color: #f0f7ff;
+            background-color: var(--semi-color-fill-0, #f0f7ff);
             padding: 15px;
             border-radius: 5px;
-            font-size: 16px;
+            font-size: 14px;
         }
         .loading {
-            color: #666;
+            color: var(--semi-color-text-2, #666);
             text-align: center;
             padding: 20px;
         }
         .error {
-            color: red;
+            color: var(--semi-color-danger, #f5222d);
             text-align: center;
             padding: 20px;
         }
     </style>
 
     <script>
-        window.addEventListener('load', async function() {
+        async function initPlugin() {
             try {
-                // 等待bitable SDK加载完成
-                await new Promise(resolve => {
+                // 等待飞书 SDK 加载完成
+                await new Promise((resolve) => {
                     if (window.bitable) {
                         resolve();
                     } else {
-                        window.addEventListener('bitableLoaded', resolve);
+                        const checkBitable = setInterval(() => {
+                            if (window.bitable) {
+                                clearInterval(checkBitable);
+                                resolve();
+                            }
+                        }, 100);
                     }
                 });
 
                 // 获取当前表格
-                const base = await bitable.base;
-                const table = await base.getActiveTable();
+                const table = await bitable.base.getActiveTable();
                 
                 // 获取记录
                 const records = await table.getRecords();
-                if (records.length === 0) {
-                    document.getElementById('timeline-container').innerHTML = '<div class="error">暂无数据</div>';
+                if (!records || records.length === 0) {
+                    document.getElementById('timeline-container').innerHTML = '<div class="error">暂无数据，请先在表格中添加数据</div>';
                     return;
                 }
 
@@ -106,7 +118,7 @@
                 
                 // 获取学校名称
                 const schools = [];
-                for (let i = 0; i < 4; i++) {
+                for (let i = 0; i < 4 && i < fields.length; i++) {
                     const field = fields[i];
                     if (field) {
                         const value = await table.getCellValue(field.id, firstRow.recordId);
@@ -124,11 +136,27 @@
 
                 document.getElementById('timeline-container').innerHTML = timelineHtml;
 
+                // 监听数据变化
+                table.onRecordChange(() => {
+                    initPlugin();
+                });
+
             } catch (error) {
                 console.error('插件运行错误:', error);
-                document.getElementById('timeline-container').innerHTML = `<div class="error">插件加载失败: ${error.message}</div>`;
+                document.getElementById('timeline-container').innerHTML = 
+                    `<div class="error">插件加载失败: ${error.message || '请确保有访问权限并刷新页面'}</div>`;
             }
-        });
+        }
+
+        // 初始化插件
+        window.addEventListener('load', initPlugin);
+
+        // 监听主题变化
+        if (window.bitable) {
+            bitable.bridge.onThemeChange((event) => {
+                document.body.setAttribute('theme', event.data.theme.toLowerCase());
+            });
+        }
     </script>
 </body>
 </html>
