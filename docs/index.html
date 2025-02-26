@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <title>志愿推荐插件</title>
-    <script src="https://open.feishu.cn/open-apis/bitable-web/sdk/bitable.umd.js"></script>
+    <script src="https://lf1-cdn-tos.bytegoofy.com/obj/iconpark/icons_23252_2.9.6.js"></script>
+    <script src="https://unpkg.com/@lark-base-open/js-sdk@0.3.6/dist/index.min.js"></script>
     <style>
         body {
             margin: 0;
@@ -20,6 +21,9 @@
             font-size: 16px;
             color: #333;
             margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
         .error {
             color: #ff4d4f;
@@ -29,13 +33,16 @@
             margin-bottom: 16px;
         }
         .button {
-            background: #1890ff;
+            background: #3370ff;
             color: white;
             border: none;
             padding: 8px 16px;
             border-radius: 4px;
             cursor: pointer;
             font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
         }
         .button:disabled {
             background: #d9d9d9;
@@ -44,11 +51,14 @@
         .result {
             margin-top: 16px;
             padding: 16px;
-            background: #f6f8ff;
+            background: #f0f6ff;
             border-radius: 4px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
         .link {
-            color: #1890ff;
+            color: #3370ff;
             text-decoration: none;
         }
         .link:hover {
@@ -56,128 +66,64 @@
         }
         #status {
             margin-bottom: 16px;
-            padding: 8px;
+            padding: 8px 12px;
             border-radius: 4px;
             font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
         .status-loading {
-            background: #e6f7ff;
-            color: #1890ff;
+            background: #e8f3ff;
+            color: #3370ff;
         }
         .status-error {
             background: #fff2f0;
             color: #ff4d4f;
         }
         .status-success {
-            background: #f6ffed;
+            background: #f0fff0;
             color: #52c41a;
+        }
+        .icon {
+            width: 16px;
+            height: 16px;
         }
     </style>
 </head>
 <body>
     <div class="container">
         <div id="status" style="display: none;"></div>
-        <div class="title">请先在表格中选择一行数据，然后点击生成按钮</div>
-        <button id="generateBtn" class="button" disabled>生成预览页面</button>
+        <div class="title">
+            <i class="icon" data-icon-id="TimeTwo"></i>
+            请先在表格中选择一行数据，然后点击生成按钮
+        </div>
+        <button id="generateBtn" class="button" disabled>
+            <i class="icon" data-icon-id="Preview"></i>
+            生成预览页面
+        </button>
         <div id="result" class="result" style="display: none;">
+            <i class="icon" data-icon-id="Success"></i>
             预览页面已生成：<a id="previewLink" class="link" target="_blank"></a>
         </div>
     </div>
 
     <script>
-        function showStatus(message, type = 'loading') {
+        function showStatus(message, type = 'loading', iconId = '') {
             const status = document.getElementById('status');
             status.className = `status-${type}`;
-            status.textContent = message;
+            status.innerHTML = `${iconId ? `<i class="icon" data-icon-id="${iconId}"></i>` : ''}${message}`;
             status.style.display = 'block';
-        }
-
-        // 等待 SDK 加载完成
-        function waitForBitable() {
-            return new Promise((resolve, reject) => {
-                let retries = 0;
-                const maxRetries = 50;  // 5秒超时
-                const interval = setInterval(() => {
-                    retries++;
-                    if (window.bitable) {
-                        clearInterval(interval);
-                        resolve(window.bitable);
-                    } else if (retries >= maxRetries) {
-                        clearInterval(interval);
-                        reject(new Error('SDK加载超时，请刷新页面重试'));
-                    }
-                }, 100);
-            });
-        }
-
-        // 检测插件是否在飞书环境中运行
-        function checkFeishuEnvironment() {
-            const url = window.location.href;
-            const isFeishu = url.includes('feishu.cn') || url.includes('larksuite.com');
-            const isLocalhost = url.includes('localhost') || url.includes('127.0.0.1');
-            const isGitHubPages = url.includes('github.io');
-            
-            if (!isFeishu && !isLocalhost && !isGitHubPages) {
-                showStatus('请在飞书多维表格中使用此插件', 'error');
-                return false;
-            }
-            return true;
-        }
-
-        // 检测插件功能
-        async function checkPluginFunctionality(bitable) {
-            try {
-                const base = await bitable.base;
-                if (!base) {
-                    throw new Error('无法访问多维表格');
-                }
-                
-                const table = await base.getActiveTable();
-                if (!table) {
-                    throw new Error('无法获取当前表格');
-                }
-                
-                const fields = await table.getFieldList();
-                if (!fields || !Array.isArray(fields)) {
-                    throw new Error('无法获取字段列表');
-                }
-                
-                return true;
-            } catch (error) {
-                console.error('功能检测失败:', error);
-                showStatus('插件功能检测失败: ' + error.message, 'error');
-                return false;
-            }
         }
 
         async function initPlugin() {
             try {
-                showStatus('正在初始化插件...');
-                console.log('开始初始化插件');
-
-                // 检查运行环境
-                if (!checkFeishuEnvironment()) {
-                    return;
-                }
-
-                // 等待 SDK 加载
-                const bitable = await waitForBitable();
-                console.log('SDK已加载');
-
-                // 检测插件功能
-                const isWorking = await checkPluginFunctionality(bitable);
-                if (!isWorking) {
-                    return;
-                }
+                showStatus('正在初始化插件...', 'loading', 'Loading');
 
                 // 获取当前表格
-                showStatus('正在连接到飞书多维表格...');
-                console.log('正在获取当前表格');
-                
-                const base = await bitable.base;
-                const table = await base.getActiveTable();
+                const table = await bitable.base.getActiveTable();
                 console.log('已获取当前表格');
-                
+
                 const generateBtn = document.getElementById('generateBtn');
                 const result = document.getElementById('result');
                 const previewLink = document.getElementById('previewLink');
@@ -187,14 +133,15 @@
                     try {
                         const selection = await table.getSelection();
                         generateBtn.disabled = !selection || selection.recordIds.length !== 1;
+                        
                         if (generateBtn.disabled) {
-                            showStatus('请选择一行数据', 'error');
+                            showStatus('请选择一行数据', 'error', 'Attention');
                         } else {
-                            showStatus('已选择数据，可以生成预览', 'success');
+                            showStatus('已选择数据，可以生成预览', 'success', 'Success');
                         }
                     } catch (error) {
                         console.error('更新按钮状态失败:', error);
-                        showStatus('获取选中数据失败: ' + error.message, 'error');
+                        showStatus('获取选中数据失败: ' + error.message, 'error', 'Error');
                     }
                 }
 
@@ -202,28 +149,37 @@
                 await updateButtonState();
 
                 // 监听选择变化
-                table.onSelectionChange(updateButtonState);
+                table.onSelectionChange(async () => {
+                    await updateButtonState();
+                });
 
                 // 生成按钮点击事件
                 generateBtn.onclick = async () => {
                     try {
-                        showStatus('正在生成预览...');
+                        showStatus('正在生成预览...', 'loading', 'Loading');
+                        
+                        // 获取选中的记录
                         const selection = await table.getSelection();
                         if (!selection || selection.recordIds.length !== 1) {
                             throw new Error('请先选择一行数据');
                         }
 
                         const recordId = selection.recordIds[0];
+                        
+                        // 获取所有字段
                         const fields = await table.getFieldList();
                         const values = [];
 
                         // 获取前4个字段的值
                         for (let i = 0; i < 4 && i < fields.length; i++) {
-                            const value = await table.getCellValue(fields[i].id, recordId);
+                            const field = fields[i];
+                            // 使用字段对象获取值
+                            const value = await table.getCellValue(field.id, recordId);
                             values.push(value || '未填写');
                         }
 
-                        showStatus('正在加载模板...');
+                        showStatus('正在加载模板...', 'loading', 'Loading');
+                        
                         // 读取模板文件
                         const response = await fetch('template.html');
                         if (!response.ok) {
@@ -254,20 +210,22 @@
                         previewLink.textContent = '点击查看预览页面';
                         result.style.display = 'block';
 
-                        showStatus('预览页面已生成', 'success');
+                        showStatus('预览页面已生成', 'success', 'Success');
 
                         // 自动打开预览页面
                         window.open(url, '_blank');
                     } catch (error) {
                         console.error('生成预览页面失败:', error);
-                        showStatus(error.message, 'error');
+                        showStatus(error.message, 'error', 'Error');
                         result.style.display = 'none';
                     }
                 };
 
+                showStatus('插件已准备就绪', 'success', 'Success');
+
             } catch (error) {
                 console.error('插件初始化失败:', error);
-                showStatus('插件初始化失败: ' + error.message, 'error');
+                showStatus('插件初始化失败: ' + error.message, 'error', 'Error');
             }
         }
 
