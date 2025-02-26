@@ -1,0 +1,13 @@
+{
+    "type": "extension",
+    "version": "1.0.0",
+    "name": "志愿推荐插件",
+    "description": "生成志愿推荐预览页面",
+    "extensions": [
+        {
+            "type": "ui",
+            "mode": "page",
+            "entry": "index.html"
+        }
+    ]
+}
