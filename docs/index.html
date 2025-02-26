@@ -66,9 +66,44 @@
     </div>
 
     <script>
+        // 等待SDK加载
+        function waitForBitable() {
+            return new Promise((resolve, reject) => {
+                if (window.bitable) {
+                    resolve(window.bitable);
+                    return;
+                }
+
+                let attempts = 0;
+                const maxAttempts = 50; // 5秒超时
+                const interval = setInterval(() => {
+                    attempts++;
+                    if (window.bitable) {
+                        clearInterval(interval);
+                        resolve(window.bitable);
+                    } else if (attempts >= maxAttempts) {
+                        clearInterval(interval);
+                        reject(new Error('SDK加载超时，请刷新页面重试'));
+                    }
+                }, 100);
+
+                // 监听SDK加载完成事件
+                window.addEventListener('bitableLoaded', () => {
+                    clearInterval(interval);
+                    resolve(window.bitable);
+                });
+            });
+        }
+
         async function initPlugin() {
             try {
+                // 等待SDK加载
+                const bitable = await waitForBitable();
+                console.log('SDK加载成功');
+
                 const table = await bitable.base.getActiveTable();
+                console.log('获取当前表格成功');
+                
                 const selection = await table.getSelection();
                 const generateBtn = document.getElementById('generateBtn');
                 const result = document.getElementById('result');
@@ -143,8 +178,12 @@
             }
         }
 
-        // 初始化插件
-        window.addEventListener('load', initPlugin);
+        // 页面加载完成后初始化插件
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initPlugin);
+        } else {
+            initPlugin();
+        }
     </script>
 </body>
 </html>
