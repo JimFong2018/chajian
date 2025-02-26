@@ -110,14 +110,65 @@
             });
         }
 
+        // 检测插件是否在飞书环境中运行
+        function checkFeishuEnvironment() {
+            const url = window.location.href;
+            const isFeishu = url.includes('feishu.cn') || url.includes('larksuite.com');
+            const isLocalhost = url.includes('localhost') || url.includes('127.0.0.1');
+            const isGitHubPages = url.includes('github.io');
+            
+            if (!isFeishu && !isLocalhost && !isGitHubPages) {
+                showStatus('请在飞书多维表格中使用此插件', 'error');
+                return false;
+            }
+            return true;
+        }
+
+        // 检测插件功能
+        async function checkPluginFunctionality(bitable) {
+            try {
+                const base = await bitable.base;
+                if (!base) {
+                    throw new Error('无法访问多维表格');
+                }
+                
+                const table = await base.getActiveTable();
+                if (!table) {
+                    throw new Error('无法获取当前表格');
+                }
+                
+                const fields = await table.getFieldList();
+                if (!fields || !Array.isArray(fields)) {
+                    throw new Error('无法获取字段列表');
+                }
+                
+                return true;
+            } catch (error) {
+                console.error('功能检测失败:', error);
+                showStatus('插件功能检测失败: ' + error.message, 'error');
+                return false;
+            }
+        }
+
         async function initPlugin() {
             try {
                 showStatus('正在初始化插件...');
                 console.log('开始初始化插件');
 
+                // 检查运行环境
+                if (!checkFeishuEnvironment()) {
+                    return;
+                }
+
                 // 等待 SDK 加载
                 const bitable = await waitForBitable();
                 console.log('SDK已加载');
+
+                // 检测插件功能
+                const isWorking = await checkPluginFunctionality(bitable);
+                if (!isWorking) {
+                    return;
+                }
 
                 // 获取当前表格
                 showStatus('正在连接到飞书多维表格...');
