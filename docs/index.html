@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>志愿推荐插件</title>
-    <script src="https://lf1-cdn-tos.bytegoofy.com/obj/mosaic-legacy/base-sdk/base-sdk.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@lark-base-open/js-sdk@0.3.6/dist/index.min.js"></script>
     <style>
         body {
             margin: 0;
@@ -96,27 +96,9 @@
             try {
                 showStatus('正在初始化插件...');
 
-                // 等待页面完全加载
-                if (document.readyState !== 'complete') {
-                    await new Promise(resolve => window.addEventListener('load', resolve));
-                }
-
-                // 等待 Base SDK 加载完成
-                await new Promise((resolve, reject) => {
-                    if (window.BaseSdk) {
-                        resolve();
-                    } else {
-                        const script = document.createElement('script');
-                        script.src = 'https://lf1-cdn-tos.bytegoofy.com/obj/mosaic-legacy/base-sdk/base-sdk.js';
-                        script.onload = resolve;
-                        script.onerror = () => reject(new Error('SDK加载失败'));
-                        document.head.appendChild(script);
-                    }
-                });
-
-                // 初始化 Base SDK
-                const bitable = await window.BaseSdk.init();
-
+                // 使用官方SDK初始化
+                const bitable = window.bitable;
+                
                 showStatus('正在连接到飞书多维表格...');
                 const table = await bitable.base.getActiveTable();
                 
@@ -213,11 +195,12 @@
             }
         }
 
-        // 初始化插件
-        initPlugin().catch(error => {
-            console.error('插件启动失败:', error);
-            showStatus('插件启动失败: ' + error.message, 'error');
-        });
+        // 等待文档加载完成后初始化插件
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initPlugin);
+        } else {
+            initPlugin();
+        }
     </script>
 </body>
 </html>
