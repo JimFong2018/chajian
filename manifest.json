@@ -1,0 +1,22 @@
+{
+  "name": "志愿填充插件",
+  "version": "1.0.0",
+  "description": "自动将飞书表格数据填充到HTML志愿表中",
+  "permissions": [
+    "sheets:readonly"
+  ],
+  "main": "index.js",
+  "capabilities": [
+    {
+      "type": "sheet_action",
+      "title": "填充志愿数据",
+      "description": "将表格数据填充到HTML",
+      "path": "/fill-data"
+    }
+  ],
+  "configuration": {
+    "type": "github",
+    "repo_url": "",
+    "branch": "main"
+  }
+}
