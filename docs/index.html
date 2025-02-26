@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <title>志愿推荐插件</title>
     <script src="https://lf1-cdn-tos.bytegoofy.com/obj/iconpark/icons_23252_2.9.6.js"></script>
-    <script src="https://unpkg.com/@lark-base-open/js-sdk@0.3.6/dist/index.min.js"></script>
+    <script src="https://unpkg.com/@lark-base-open/js-sdk@0.3.6/dist/index.js"></script>
     <style>
         body {
             margin: 0;
@@ -116,14 +116,53 @@
             status.style.display = 'block';
         }
 
+        // 等待 SDK 加载完成
+        function waitForBitable() {
+            return new Promise((resolve, reject) => {
+                if (window.$bitable) {
+                    resolve(window.$bitable);
+                    return;
+                }
+
+                let retries = 0;
+                const maxRetries = 50;  // 5秒超时
+                const interval = setInterval(() => {
+                    retries++;
+                    if (window.$bitable) {
+                        clearInterval(interval);
+                        resolve(window.$bitable);
+                    } else if (retries >= maxRetries) {
+                        clearInterval(interval);
+                        reject(new Error('SDK加载超时，请刷新页面重试'));
+                    }
+                }, 100);
+
+                // 监听 SDK 加载完成事件
+                window.addEventListener('message', (event) => {
+                    if (event.data && event.data.type === 'bitable-sdk-loaded') {
+                        clearInterval(interval);
+                        resolve(window.$bitable);
+                    }
+                });
+            });
+        }
+
         async function initPlugin() {
             try {
                 showStatus('正在初始化插件...', 'loading', 'Loading');
+                console.log('开始初始化插件');
+
+                // 等待 SDK 加载
+                const bitable = await waitForBitable();
+                console.log('SDK已加载:', bitable);
 
                 // 获取当前表格
+                showStatus('正在连接到飞书多维表格...', 'loading', 'Loading');
+                console.log('正在获取当前表格');
+                
                 const table = await bitable.base.getActiveTable();
-                console.log('已获取当前表格');
-
+                console.log('已获取当前表格:', table);
+                
                 const generateBtn = document.getElementById('generateBtn');
                 const result = document.getElementById('result');
                 const previewLink = document.getElementById('previewLink');
