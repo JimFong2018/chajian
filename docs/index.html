@@ -4,215 +4,147 @@
     <meta charset="UTF-8">
     <title>志愿推荐插件</title>
     <script src="https://lf1-cdn-tos.bytegoofy.com/goofy/lark/op/h5-js-sdk/base-sdk.js"></script>
-</head>
-<body>
-    <div id="plugin-container">
-        <div class="volunteer-plugin">
-            <h1>志愿推荐</h1>
-            <div class="timeline" id="timeline-container">
-                <div class="loading">加载中...</div>
-            </div>
-        </div>
-    </div>
-
     <style>
         body {
             margin: 0;
             padding: 16px;
             font-family: -apple-system,BlinkMacSystemFont,Helvetica Neue,Tahoma,PingFang SC,Microsoft Yahei,Arial,Hiragino Sans GB,sans-serif;
         }
-        .volunteer-plugin {
+        .container {
             padding: 20px;
+            background: white;
             border-radius: 8px;
-            background: var(--semi-color-bg-0, #fff);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
         }
-        h1 {
-            color: #2196F3;
-            margin-bottom: 30px;
-            font-size: 18px;
-        }
-        .timeline {
-            position: relative;
-            padding-left: 30px;
-            min-height: 100px;
-        }
-        .timeline::before {
-            content: '';
-            position: absolute;
-            left: 0;
-            top: 0;
-            bottom: 0;
-            width: 2px;
-            background-color: #2196F3;
-        }
-        .timeline-item {
-            position: relative;
-            margin-bottom: 25px;
-            padding-left: 20px;
-        }
-        .timeline-item::before {
-            content: '';
-            position: absolute;
-            left: -5px;
-            top: 5px;
-            width: 12px;
-            height: 12px;
-            border-radius: 50%;
-            background-color: #2196F3;
-        }
-        .timeline-number {
-            color: #2196F3;
-            font-weight: bold;
-            margin-bottom: 5px;
-        }
-        .timeline-content {
-            background-color: var(--semi-color-fill-0, #f0f7ff);
-            padding: 15px;
-            border-radius: 5px;
-            font-size: 14px;
-        }
-        .loading {
-            color: var(--semi-color-text-2, #666);
-            text-align: center;
-            padding: 20px;
+        .title {
+            font-size: 16px;
+            color: #333;
+            margin-bottom: 20px;
         }
         .error {
-            color: var(--semi-color-danger, #f5222d);
-            text-align: center;
-            padding: 20px;
-        }
-        .debug-info {
-            margin-top: 20px;
-            padding: 10px;
-            background: #f5f5f5;
+            color: #ff4d4f;
+            padding: 16px;
+            background: #fff2f0;
             border-radius: 4px;
-            font-size: 12px;
-            color: #666;
-            white-space: pre-wrap;
+            margin-bottom: 16px;
+        }
+        .button {
+            background: #1890ff;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .button:disabled {
+            background: #d9d9d9;
+            cursor: not-allowed;
+        }
+        .result {
+            margin-top: 16px;
+            padding: 16px;
+            background: #f6f8ff;
+            border-radius: 4px;
+        }
+        .link {
+            color: #1890ff;
+            text-decoration: none;
+        }
+        .link:hover {
+            text-decoration: underline;
         }
     </style>
+</head>
+<body>
+    <div class="container">
+        <div class="title">请先在表格中选择一行数据，然后点击生成按钮</div>
+        <button id="generateBtn" class="button" disabled>生成预览页面</button>
+        <div id="result" class="result" style="display: none;">
+            预览页面已生成：<a id="previewLink" class="link" target="_blank"></a>
+        </div>
+    </div>
 
     <script>
-        const debugInfo = {
-            logs: []
-        };
-
-        function log(message) {
-            const time = new Date().toLocaleTimeString();
-            debugInfo.logs.push(`[${time}] ${message}`);
-            console.log(`[${time}] ${message}`);
-            updateDebugInfo();
-        }
-
-        function updateDebugInfo() {
-            const debugDiv = document.getElementById('debug-info');
-            if (debugDiv) {
-                debugDiv.textContent = debugInfo.logs.join('\n');
-            }
-        }
-
         async function initPlugin() {
             try {
-                log('开始初始化插件...');
-                
-                // 等待飞书 SDK 加载完成
-                log('等待 SDK 加载...');
-                await new Promise((resolve) => {
-                    if (window.bitable) {
-                        log('SDK 已加载');
-                        resolve();
-                    } else {
-                        log('等待 SDK 加载中...');
-                        const checkBitable = setInterval(() => {
-                            if (window.bitable) {
-                                clearInterval(checkBitable);
-                                log('SDK 加载完成');
-                                resolve();
-                            }
-                        }, 100);
-                    }
-                });
-
-                // 获取当前表格
-                log('获取当前表格...');
                 const table = await bitable.base.getActiveTable();
-                log('成功获取当前表格');
-                
-                // 获取记录
-                log('获取记录...');
-                const records = await table.getRecords();
-                log(`获取到 ${records ? records.length : 0} 条记录`);
-                
-                if (!records || records.length === 0) {
-                    document.getElementById('timeline-container').innerHTML = '<div class="error">暂无数据，请先在表格中添加数据</div>';
-                    return;
-                }
+                const selection = await table.getSelection();
+                const generateBtn = document.getElementById('generateBtn');
+                const result = document.getElementById('result');
+                const previewLink = document.getElementById('previewLink');
 
-                // 获取第一行数据
-                const firstRow = records[0];
-                
-                // 获取字段列表
-                log('获取字段列表...');
-                const fields = await table.getFieldList();
-                log(`获取到 ${fields.length} 个字段`);
-                
-                // 获取学校名称
-                const schools = [];
-                for (let i = 0; i < 4 && i < fields.length; i++) {
-                    const field = fields[i];
-                    if (field) {
-                        log(`获取第 ${i + 1} 个字段的值...`);
-                        const value = await table.getCellValue(field.id, firstRow.recordId);
-                        schools.push(value || '未填写');
-                        log(`第 ${i + 1} 个字段的值: ${value || '未填写'}`);
-                    }
-                }
-
-                // 更新页面内容
-                log('更新页面内容...');
-                const timelineHtml = schools.map((school, index) => `
-                    <div class="timeline-item">
-                        <div class="timeline-number">志愿${index + 1}</div>
-                        <div class="timeline-content">${school}</div>
-                    </div>
-                `).join('');
-
-                document.getElementById('timeline-container').innerHTML = timelineHtml;
-                log('页面内容更新完成');
-
-                // 监听数据变化
-                log('设置数据变化监听...');
-                table.onRecordChange(() => {
-                    log('检测到数据变化，重新加载...');
-                    initPlugin();
+                // 监听选择变化
+                table.onSelectionChange(async () => {
+                    const newSelection = await table.getSelection();
+                    generateBtn.disabled = !newSelection || newSelection.recordIds.length !== 1;
                 });
+
+                // 更新按钮状态
+                generateBtn.disabled = !selection || selection.recordIds.length !== 1;
+
+                // 生成按钮点击事件
+                generateBtn.onclick = async () => {
+                    try {
+                        const selection = await table.getSelection();
+                        if (!selection || selection.recordIds.length !== 1) {
+                            throw new Error('请先选择一行数据');
+                        }
+
+                        const recordId = selection.recordIds[0];
+                        const fields = await table.getFieldList();
+                        const values = [];
+
+                        // 获取前4个字段的值
+                        for (let i = 0; i < 4 && i < fields.length; i++) {
+                            const value = await table.getCellValue(fields[i].id, recordId);
+                            values.push(value || '未填写');
+                        }
+
+                        // 读取模板文件
+                        const response = await fetch('template.html');
+                        let template = await response.text();
+
+                        // 生成时间轴HTML
+                        const timelineHtml = values.map((value, index) => `
+                            <div class="timeline-item">
+                                <div class="timeline-content">
+                                    <div class="timeline-number">${index + 1}</div>
+                                    <h3>志愿${index + 1}</h3>
+                                    <p>${value}</p>
+                                </div>
+                            </div>
+                        `).join('');
+
+                        // 替换模板中的占位符
+                        template = template.replace('<!-- 数据将被插入到这里 -->', timelineHtml);
+
+                        // 创建Blob并生成URL
+                        const blob = new Blob([template], { type: 'text/html' });
+                        const url = URL.createObjectURL(blob);
+
+                        // 更新UI显示链接
+                        previewLink.href = url;
+                        previewLink.textContent = '点击查看预览页面';
+                        result.style.display = 'block';
+
+                        // 自动打开预览页面
+                        window.open(url, '_blank');
+                    } catch (error) {
+                        console.error('生成预览页面失败:', error);
+                        result.innerHTML = `<div class="error">生成预览页面失败: ${error.message}</div>`;
+                        result.style.display = 'block';
+                    }
+                };
 
             } catch (error) {
-                const errorMessage = error.message || '请确保有访问权限并刷新页面';
-                log(`发生错误: ${errorMessage}`);
-                console.error('插件运行错误:', error);
-                document.getElementById('timeline-container').innerHTML = 
-                    `<div class="error">插件加载失败: ${errorMessage}</div>`;
+                console.error('插件初始化失败:', error);
+                document.body.innerHTML = `<div class="error">插件初始化失败: ${error.message}</div>`;
             }
         }
 
-        // 添加调试信息区域
-        const debugDiv = document.createElement('div');
-        debugDiv.id = 'debug-info';
-        debugDiv.className = 'debug-info';
-        document.body.appendChild(debugDiv);
-
         // 初始化插件
-        log('页面加载完成，开始初始化...');
         window.addEventListener('load', initPlugin);
-
-        // 监听主题变化
-        if (window.bitable) {
-            bitable.bridge.onThemeChange((event) => {
-                document.body.setAttribute('theme', event.data.theme.toLowerCase());
-                log(`主题切换为: ${event.data.theme}`);
-            });
-        }
     </script>
 </body>
 </html>

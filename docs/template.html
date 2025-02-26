@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>志愿推荐结果</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            margin: 0;
+            padding: 40px;
+            background: #f0f2f5;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #1890ff;
+            text-align: center;
+            margin-bottom: 40px;
+            font-size: 28px;
+        }
+        .timeline {
+            position: relative;
+            padding: 20px 0;
+        }
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 2px;
+            height: 100%;
+            background: #1890ff;
+        }
+        .timeline-item {
+            margin-bottom: 40px;
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .timeline-content {
+            background: #f6f8ff;
+            padding: 20px;
+            border-radius: 6px;
+            width: 80%;
+            position: relative;
+            margin-left: 60px;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+        }
+        .timeline-number {
+            position: absolute;
+            left: -60px;
+            width: 40px;
+            height: 40px;
+            background: #1890ff;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+        }
+        .timeline-content h3 {
+            margin: 0 0 10px 0;
+            color: #1890ff;
+        }
+        .timeline-content p {
+            margin: 0;
+            color: #666;
+            line-height: 1.6;
+        }
+        .generated-time {
+            text-align: center;
+            color: #999;
+            font-size: 14px;
+            margin-top: 30px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>志愿推荐结果</h1>
+        <div class="timeline">
+            <!-- 数据将被插入到这里 -->
+        </div>
+        <div class="generated-time">
+            生成时间：<span id="generated-time"></span>
+        </div>
+    </div>
+    <script>
+        // 设置生成时间
+        document.getElementById('generated-time').textContent = new Date().toLocaleString();
+    </script>
+</body>
+</html>
